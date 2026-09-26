@@ -1,0 +1,21 @@
+dunght2408@DUNG:~/Hệ Phân Tán$ /bin/python3 "/home/dunght2408/Hệ Phân Tán/Chap1/kvss/test_kvss.py"
+
+KẾT QUẢ TEST
++============================+==========================+======================+===================================+======+
+| Test case                  | Request                  | Kỳ vọng              | Thực tế                           | KQ   |
++============================+==========================+======================+===================================+======+
+| TC01 PUT tạo mới           | KV/1.0 PUT user42 Alice  | 201 CREATED          | 201 CREATED                       | PASS |
+| TC02 GET key có            | KV/1.0 GET user42        | 200 OK Alice         | 200 OK Alice                      | PASS |
+| TC03 PUT ghi đè key đã có  | KV/1.0 PUT user42 Bob    | 200 OK               | 200 OK                            | PASS |
+| TC04 DEL key có            | KV/1.0 DEL user42        | 204 NO_CONTENT       | 204 NO_CONTENT                    | PASS |
+| TC05 DEL lại (idempotent)  | KV/1.0 DEL user42        | 404 NOT_FOUND        | 404 NOT_FOUND                     | PASS |
+| TC06 GET key không tồn tại | KV/1.0 GET nokey         | 404 NOT_FOUND        | 404 NOT_FOUND                     | PASS |
+| TC07 Thiếu version         | PUT user42 Alice         | 426 UPGRADE_REQUIRED | 426 UPGRADE_REQUIRED              | PASS |
+| TC08 Sai version           | KV/2.0 GET user42        | 426 UPGRADE_REQUIRED | 426 UPGRADE_REQUIRED              | PASS |
+| TC09 PUT thiếu value       | KV/1.0 PUT user42        | 400 BAD_REQUEST      | 400 BAD_REQUEST                   | PASS |
+| TC10 Lệnh không tồn tại    | KV/1.0 POTT user42 Alice | 400 BAD_REQUEST      | 400 BAD_REQUEST                   | PASS |
+| TC11 STATS                 | KV/1.0 STATS             | 200 OK keys=         | 200 OK keys=0 uptime=0s served=11 | PASS |
+| TC12 Request bị chia 2 gói | KV/1.0 PUT split 123     | 201 CREATED          | 201 CREATED                       | PASS |
+| TC13 QUIT                  | KV/1.0 QUIT              | 200 OK bye           | 200 OK bye                        | PASS |
++----------------------------+--------------------------+----------------------+-----------------------------------+------+
+PASS: 13  |  FAIL: 0

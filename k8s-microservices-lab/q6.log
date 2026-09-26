@@ -1,0 +1,13 @@
+dunght2408@DUNG:~/Hệ Phân Tán/Chap1/k8s-microservices-lab$ kubectl apply -f users-deploy.yaml
+deployment.apps/users-deploy created
+service/users-svc created
+dunght2408@DUNG:~/Hệ Phân Tán/Chap1/k8s-microservices-lab$ kubectl get deploy users-deploy
+NAME           READY   UP-TO-DATE   AVAILABLE   AGE
+users-deploy   1/1     1            1           0s
+dunght2408@DUNG:~/Hệ Phân Tán/Chap1/k8s-microservices-lab$ kubectl get pods -l app=users -o wide
+NAME                           READY   STATUS    RESTARTS   AGE   IP            NODE       NOMINATED NODE   READINESS GATES
+users-deploy-877548cf6-mx44t   1/1     Running   0          0s    10.244.0.16   minikube   <none>           <none>
+dunght2408@DUNG:~/Hệ Phân Tán/Chap1/k8s-microservices-lab$ kubectl get svc users-svc
+NAME        TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)   AGE
+users-svc   ClusterIP   10.98.82.129   <none>        80/TCP    1s
+dunght2408@DUNG:~/Hệ Phân Tán/Chap1/k8s-microservices-lab$

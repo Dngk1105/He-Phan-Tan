@@ -1,0 +1,104 @@
+dunght2408@DUNG:~/Hệ Phân Tán/Chap1/kvss$ python3 server.py --port 5050 --log server.log > /dev/null &
+dunght2408@DUNG:~/Hệ Phân Tán/Chap1/kvss$ printf "PUT user42 Alice\nGET user42\nDEL user42\nGET user42\nSTATS\nQUIT\n" | python3 client.py
+C: KV/1.0 PUT user42 Alice
+S: 201 CREATED
+C: KV/1.0 GET user42
+S: 200 OK Alice
+C: KV/1.0 DEL user42
+S: 204 NO_CONTENT
+C: KV/1.0 GET user42
+S: 404 NOT_FOUND
+C: KV/1.0 STATS
+S: 200 OK keys=0 uptime=0s served=5
+C: KV/1.0 QUIT
+S: 200 OK bye
+dunght2408@DUNG:~/Hệ Phân Tán/Chap1/kvss$ printf "PUT user42 Alice\nKV/1.0 PUT user42\nKV/1.0 POTT user42 Alice\nKV/1.0 DEL ghost\nKV/1.0 DEL ghost\nKV/1.0 QUIT\n" | python3 client.py --raw
+C: PUT user42 Alice
+S: 426 UPGRADE_REQUIRED
+C: KV/1.0 PUT user42
+S: 400 BAD_REQUEST
+C: KV/1.0 POTT user42 Alice
+S: 400 BAD_REQUEST
+C: KV/1.0 DEL ghost
+S: 404 NOT_FOUND
+C: KV/1.0 DEL ghost
+S: 404 NOT_FOUND
+C: KV/1.0 QUIT
+S: 200 OK bye
+dunght2408@DUNG:~/Hệ Phân Tán/Chap1/kvss$ printf "KV/1.0 PUT city Hanoi\nKV/1.0 GET city\nKV/1.0 STATS\nKV/1.0 QUIT\n" | nc -q1 127.0.0.1 5050
+201 CREATED
+200 OK Hanoi
+200 OK keys=1 uptime=0s served=15
+200 OK bye
+dunght2408@DUNG:~/Hệ Phân Tán/Chap1/kvss$ { sleep 0.3; printf "KV/1.0 GET city\r\n"; sleep 0.3; printf "KV/1.0 QUIT\r\n"; sleep 0.3; } | telnet 127.0.0.1 5050
+Trying 127.0.0.1...
+Connected to 127.0.0.1.
+Escape character is '^]'.
+200 OK Hanoi
+200 OK bye
+Connection closed by foreign host.
+dunght2408@DUNG:~/Hệ Phân Tán/Chap1/kvss$ python3 test_kvss.py
+
+KẾT QUẢ TEST
++============================+==========================+======================+===================================+======+
+| Test case                  | Request                  | Kỳ vọng              | Thực tế                           | KQ   |
++============================+==========================+======================+===================================+======+
+| TC01 PUT tạo mới           | KV/1.0 PUT user42 Alice  | 201 CREATED          | 201 CREATED                       | PASS |
+| TC02 GET key có            | KV/1.0 GET user42        | 200 OK Alice         | 200 OK Alice                      | PASS |
+| TC03 PUT ghi đè key đã có  | KV/1.0 PUT user42 Bob    | 200 OK               | 200 OK                            | PASS |
+| TC04 DEL key có            | KV/1.0 DEL user42        | 204 NO_CONTENT       | 204 NO_CONTENT                    | PASS |
+| TC05 DEL lại (idempotent)  | KV/1.0 DEL user42        | 404 NOT_FOUND        | 404 NOT_FOUND                     | PASS |
+| TC06 GET key không tồn tại | KV/1.0 GET nokey         | 404 NOT_FOUND        | 404 NOT_FOUND                     | PASS |
+| TC07 Thiếu version         | PUT user42 Alice         | 426 UPGRADE_REQUIRED | 426 UPGRADE_REQUIRED              | PASS |
+| TC08 Sai version           | KV/2.0 GET user42        | 426 UPGRADE_REQUIRED | 426 UPGRADE_REQUIRED              | PASS |
+| TC09 PUT thiếu value       | KV/1.0 PUT user42        | 400 BAD_REQUEST      | 400 BAD_REQUEST                   | PASS |
+| TC10 Lệnh không tồn tại    | KV/1.0 POTT user42 Alice | 400 BAD_REQUEST      | 400 BAD_REQUEST                   | PASS |
+| TC11 STATS                 | KV/1.0 STATS             | 200 OK keys=         | 200 OK keys=0 uptime=0s served=11 | PASS |
+| TC12 Request bị chia 2 gói | KV/1.0 PUT split 123     | 201 CREATED          | 201 CREATED                       | PASS |
+| TC13 QUIT                  | KV/1.0 QUIT              | 200 OK bye           | 200 OK bye                        | PASS |
++----------------------------+--------------------------+----------------------+-----------------------------------+------+
+PASS: 13  |  FAIL: 0
+
+dunght2408@DUNG:~/Hệ Phân Tán/Chap1/kvss$ cat server.log
+[2026-09-26 17:22:49.990] 127.0.0.1:5050 -- KVSS server listening (pid=16293)
+[2026-09-26 17:22:50.484] 127.0.0.1:57536 -- connected
+[2026-09-26 17:22:50.484] 127.0.0.1:57536 C->S 'KV/1.0 PUT user42 Alice'
+[2026-09-26 17:22:50.484] 127.0.0.1:57536 S->C '201 CREATED'
+[2026-09-26 17:22:50.485] 127.0.0.1:57536 C->S 'KV/1.0 GET user42'
+[2026-09-26 17:22:50.485] 127.0.0.1:57536 S->C '200 OK Alice'
+[2026-09-26 17:22:50.485] 127.0.0.1:57536 C->S 'KV/1.0 DEL user42'
+[2026-09-26 17:22:50.485] 127.0.0.1:57536 S->C '204 NO_CONTENT'
+[2026-09-26 17:22:50.485] 127.0.0.1:57536 C->S 'KV/1.0 GET user42'
+[2026-09-26 17:22:50.485] 127.0.0.1:57536 S->C '404 NOT_FOUND'
+[2026-09-26 17:22:50.485] 127.0.0.1:57536 C->S 'KV/1.0 STATS'
+[2026-09-26 17:22:50.485] 127.0.0.1:57536 S->C '200 OK keys=0 uptime=0s served=5'
+[2026-09-26 17:22:50.485] 127.0.0.1:57536 C->S 'KV/1.0 QUIT'
+[2026-09-26 17:22:50.485] 127.0.0.1:57536 S->C '200 OK bye'
+[2026-09-26 17:22:50.514] 127.0.0.1:57546 -- connected
+[2026-09-26 17:22:50.514] 127.0.0.1:57546 C->S 'PUT user42 Alice'
+[2026-09-26 17:22:50.514] 127.0.0.1:57546 S->C '426 UPGRADE_REQUIRED'
+[2026-09-26 17:22:50.515] 127.0.0.1:57546 C->S 'KV/1.0 PUT user42'
+[2026-09-26 17:22:50.515] 127.0.0.1:57546 S->C '400 BAD_REQUEST'
+[2026-09-26 17:22:50.515] 127.0.0.1:57546 C->S 'KV/1.0 POTT user42 Alice'
+[2026-09-26 17:22:50.515] 127.0.0.1:57546 S->C '400 BAD_REQUEST'
+[2026-09-26 17:22:50.515] 127.0.0.1:57546 C->S 'KV/1.0 DEL ghost'
+[2026-09-26 17:22:50.515] 127.0.0.1:57546 S->C '404 NOT_FOUND'
+[2026-09-26 17:22:50.515] 127.0.0.1:57546 C->S 'KV/1.0 DEL ghost'
+[2026-09-26 17:22:50.515] 127.0.0.1:57546 S->C '404 NOT_FOUND'
+[2026-09-26 17:22:50.515] 127.0.0.1:57546 C->S 'KV/1.0 QUIT'
+[2026-09-26 17:22:50.515] 127.0.0.1:57546 S->C '200 OK bye'
+[2026-09-26 17:22:50.524] 127.0.0.1:57550 -- connected
+[2026-09-26 17:22:50.524] 127.0.0.1:57550 C->S 'KV/1.0 PUT city Hanoi'
+[2026-09-26 17:22:50.524] 127.0.0.1:57550 S->C '201 CREATED'
+[2026-09-26 17:22:50.524] 127.0.0.1:57550 C->S 'KV/1.0 GET city'
+[2026-09-26 17:22:50.524] 127.0.0.1:57550 S->C '200 OK Hanoi'
+[2026-09-26 17:22:50.524] 127.0.0.1:57550 C->S 'KV/1.0 STATS'
+[2026-09-26 17:22:50.524] 127.0.0.1:57550 S->C '200 OK keys=1 uptime=0s served=15'
+[2026-09-26 17:22:50.524] 127.0.0.1:57550 C->S 'KV/1.0 QUIT'
+[2026-09-26 17:22:50.524] 127.0.0.1:57550 S->C '200 OK bye'
+[2026-09-26 17:22:51.533] 127.0.0.1:57566 -- connected
+[2026-09-26 17:22:51.827] 127.0.0.1:57566 C->S 'KV/1.0 GET city'
+[2026-09-26 17:22:51.827] 127.0.0.1:57566 S->C '200 OK Hanoi'
+[2026-09-26 17:22:52.128] 127.0.0.1:57566 C->S 'KV/1.0 QUIT'
+[2026-09-26 17:22:52.128] 127.0.0.1:57566 S->C '200 OK bye'
+dunght2408@DUNG:~/Hệ Phân Tán/Chap1/kvss$

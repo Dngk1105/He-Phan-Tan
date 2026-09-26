@@ -1,0 +1,82 @@
+dunght2408@DUNG:~/Hệ Phân Tán/Chap1/k8s-microservices-lab$ kubectl get nodes
+NAME       STATUS   ROLES           AGE   VERSION
+minikube   Ready    control-plane   22m   v1.37.0
+dunght2408@DUNG:~/Hệ Phân Tán/Chap1/k8s-microservices-lab$ kubectl create namespace micro-lab
+namespace/micro-lab created
+dunght2408@DUNG:~/Hệ Phân Tán/Chap1/k8s-microservices-lab$ kubectl config set-context --current --namespace=micro-lab
+Context "minikube" modified.
+dunght2408@DUNG:~/Hệ Phân Tán/Chap1/k8s-microservices-lab$ kubectl apply -f users-deploy.yaml
+deployment.apps/users-deploy created
+service/users-svc created
+dunght2408@DUNG:~/Hệ Phân Tán/Chap1/k8s-microservices-lab$ kubectl apply -f catalog-deploy.yaml
+deployment.apps/catalog-deploy created
+service/catalog-svc created
+dunght2408@DUNG:~/Hệ Phân Tán/Chap1/k8s-microservices-lab$ kubectl apply -f orders-deploy.yaml
+deployment.apps/orders-deploy created
+service/orders-svc created
+dunght2408@DUNG:~/Hệ Phân Tán/Chap1/k8s-microservices-lab$ kubectl apply -f gateway-ingress.yaml
+ingress.networking.k8s.io/gateway-ingress created
+dunght2408@DUNG:~/Hệ Phân Tán/Chap1/k8s-microservices-lab$ kubectl rollout status deploy/users-deploy --timeout=120s
+deployment "users-deploy" successfully rolled out
+dunght2408@DUNG:~/Hệ Phân Tán/Chap1/k8s-microservices-lab$ kubectl get pods -l app=users
+NAME                           READY   STATUS    RESTARTS   AGE
+users-deploy-877548cf6-mhj26   1/1     Running   0          2s
+dunght2408@DUNG:~/Hệ Phân Tán/Chap1/k8s-microservices-lab$ kubectl get pods
+NAME                              READY   STATUS    RESTARTS   AGE
+catalog-deploy-7b6df58c99-pphqn   1/1     Running   0          2s
+orders-deploy-6b7b4d4db9-kmb94    1/1     Running   0          1s
+users-deploy-877548cf6-mhj26      1/1     Running   0          2s
+dunght2408@DUNG:~/Hệ Phân Tán/Chap1/k8s-microservices-lab$ kubectl get svc
+NAME          TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)   AGE
+catalog-svc   ClusterIP   10.96.160.84     <none>        80/TCP    2s
+orders-svc    ClusterIP   10.101.213.138   <none>        80/TCP    1s
+users-svc     ClusterIP   10.96.210.5      <none>        80/TCP    2s
+dunght2408@DUNG:~/Hệ Phân Tán/Chap1/k8s-microservices-lab$ kubectl get ingress
+NAME              CLASS   HOSTS         ADDRESS   PORTS   AGE
+gateway-ingress   nginx   micro.local             80      21s
+dunght2408@DUNG:~/Hệ Phân Tán/Chap1/k8s-microservices-lab$ minikube ip
+192.168.49.2
+dunght2408@DUNG:~/Hệ Phân Tán/Chap1/k8s-microservices-lab$ kubectl port-forward -n ingress-nginx svc/ingress-nginx-controller 8080:80 >/dev/null 2>&1 &
+dunght2408@DUNG:~/Hệ Phân Tán/Chap1/k8s-microservices-lab$ curl -s --resolve micro.local:8080:127.0.0.1 http://micro.local:8080/users | python3 -c "import sys,json; d=json.load(sys.stdin); print(json.dumps({\"service\": d[\"environment\"][\"CUSTOM_RESPONSE__SERVICE\"], \"hostname\": d[\"environment\"][\"HOSTNAME\"], \"originalUrl\": d[\"http\"][\"originalUrl\"]}))"
+{"service": "users", "hostname": "users-deploy-877548cf6-mhj26", "originalUrl": "/"}
+dunght2408@DUNG:~/Hệ Phân Tán/Chap1/k8s-microservices-lab$ curl -s --resolve micro.local:8080:127.0.0.1 http://micro.local:8080/catalog | python3 -c "import sys,json; d=json.load(sys.stdin); print(json.dumps({\"service\": d[\"environment\"][\"CUSTOM_RESPONSE__SERVICE\"], \"hostname\": d[\"environment\"][\"HOSTNAME\"], \"originalUrl\": d[\"http\"][\"originalUrl\"]}))"
+{"service": "catalog", "hostname": "catalog-deploy-7b6df58c99-pphqn", "originalUrl": "/"}
+dunght2408@DUNG:~/Hệ Phân Tán/Chap1/k8s-microservices-lab$ curl -s --resolve micro.local:8080:127.0.0.1 http://micro.local:8080/orders | python3 -c "import sys,json; d=json.load(sys.stdin); print(json.dumps({\"service\": d[\"environment\"][\"CUSTOM_RESPONSE__SERVICE\"], \"hostname\": d[\"environment\"][\"HOSTNAME\"], \"originalUrl\": d[\"http\"][\"originalUrl\"]}))"
+{"service": "orders", "hostname": "orders-deploy-6b7b4d4db9-kmb94", "originalUrl": "/"}
+dunght2408@DUNG:~/Hệ Phân Tán/Chap1/k8s-microservices-lab$ kubectl scale deploy catalog-deploy --replicas=3
+deployment.apps/catalog-deploy scaled
+dunght2408@DUNG:~/Hệ Phân Tán/Chap1/k8s-microservices-lab$ kubectl rollout status deploy/catalog-deploy --timeout=120s
+Waiting for deployment "catalog-deploy" rollout to finish: 1 of 3 updated replicas are available...
+Waiting for deployment "catalog-deploy" rollout to finish: 2 of 3 updated replicas are available...
+deployment "catalog-deploy" successfully rolled out
+dunght2408@DUNG:~/Hệ Phân Tán/Chap1/k8s-microservices-lab$ kubectl get pods -l app=catalog -o wide
+NAME                              READY   STATUS    RESTARTS   AGE   IP            NODE       NOMINATED NODE   READINESS GATES
+catalog-deploy-7b6df58c99-598sk   1/1     Running   0          10s   10.244.0.14   minikube   <none>           <none>
+catalog-deploy-7b6df58c99-pphqn   1/1     Running   0          36s   10.244.0.12   minikube   <none>           <none>
+catalog-deploy-7b6df58c99-w6g7t   1/1     Running   0          10s   10.244.0.15   minikube   <none>           <none>
+dunght2408@DUNG:~/Hệ Phân Tán/Chap1/k8s-microservices-lab$ for i in $(seq 1 9); do curl -s --resolve micro.local:8080:127.0.0.1 http://micro.local:8080/catalog | grep -o "\"HOSTNAME\":\"[^\"]*\""; done
+"HOSTNAME":"catalog-deploy-7b6df58c99-598sk"
+"HOSTNAME":"catalog-deploy-7b6df58c99-pphqn"
+"HOSTNAME":"catalog-deploy-7b6df58c99-w6g7t"
+"HOSTNAME":"catalog-deploy-7b6df58c99-598sk"
+"HOSTNAME":"catalog-deploy-7b6df58c99-w6g7t"
+"HOSTNAME":"catalog-deploy-7b6df58c99-pphqn"
+"HOSTNAME":"catalog-deploy-7b6df58c99-pphqn"
+"HOSTNAME":"catalog-deploy-7b6df58c99-w6g7t"
+"HOSTNAME":"catalog-deploy-7b6df58c99-598sk"
+dunght2408@DUNG:~/Hệ Phân Tán/Chap1/k8s-microservices-lab$ kubectl delete -f gateway-ingress.yaml
+ingress.networking.k8s.io "gateway-ingress" deleted from micro-lab namespace
+dunght2408@DUNG:~/Hệ Phân Tán/Chap1/k8s-microservices-lab$ kubectl delete -f users-deploy.yaml
+deployment.apps "users-deploy" deleted from micro-lab namespace
+service "users-svc" deleted from micro-lab namespace
+dunght2408@DUNG:~/Hệ Phân Tán/Chap1/k8s-microservices-lab$ kubectl delete -f catalog-deploy.yaml
+deployment.apps "catalog-deploy" deleted from micro-lab namespace
+service "catalog-svc" deleted from micro-lab namespace
+dunght2408@DUNG:~/Hệ Phân Tán/Chap1/k8s-microservices-lab$ kubectl delete -f orders-deploy.yaml
+deployment.apps "orders-deploy" deleted from micro-lab namespace
+service "orders-svc" deleted from micro-lab namespace
+dunght2408@DUNG:~/Hệ Phân Tán/Chap1/k8s-microservices-lab$ kubectl delete namespace micro-lab
+namespace "micro-lab" deleted
+dunght2408@DUNG:~/Hệ Phân Tán/Chap1/k8s-microservices-lab$ kubectl config set-context --current --namespace=default
+Context "minikube" modified.
+dunght2408@DUNG:~/Hệ Phân Tán/Chap1/k8s-microservices-lab$
