@@ -1,6 +1,6 @@
 #!/bin/bash
 # Câu 8: server ngủ 2s/request, 4 client chạy cùng lúc, theo dõi hàng đợi
-cd /root/rpc
+cd "$(dirname "$0")"
 CP=.:amqp-client-5.5.1.jar:slf4j-api-1.7.25.jar:slf4j-simple-1.7.25.jar
 mkdir -p d && cp delay/RPCServer.java d/ && (cd d && javac -cp ../amqp-client-5.5.1.jar RPCServer.java) && echo "javac delay OK"
 (cd d && setsid nohup java -cp .:../amqp-client-5.5.1.jar:../slf4j-api-1.7.25.jar:../slf4j-simple-1.7.25.jar RPCServer > ../server2.log 2>&1 < /dev/null &)

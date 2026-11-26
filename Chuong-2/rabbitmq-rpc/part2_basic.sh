@@ -1,5 +1,5 @@
 #!/bin/bash
-cd /root/rpc
+cd "$(dirname "$0")"
 CP=.:amqp-client-5.5.1.jar:slf4j-api-1.7.25.jar:slf4j-simple-1.7.25.jar
 setsid nohup java -cp $CP RPCServer > server1.log 2>&1 < /dev/null &
 sleep 4

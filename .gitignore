@@ -18,3 +18,6 @@ __pycache__/
 
 # Bản trùng
 Chuong-1/kvss_session.pcapng
+
+# Build tạm của rabbitmq-rpc
+Chuong-2/rabbitmq-rpc/d/
