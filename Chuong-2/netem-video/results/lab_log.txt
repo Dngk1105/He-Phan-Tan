@@ -1,0 +1,124 @@
+=== Câu 9: địa chỉ IP và ping ===
+$ ip addr   # máy Server (netns srv)
+eth0@if19        UP             10.0.0.1/24 
+$ ip addr   # máy Client (netns cli)
+eth0@if20        UP             10.0.0.2/24 
+$ ping -c 4 10.0.0.2   # từ Server
+PING 10.0.0.2 (10.0.0.2) 56(84) bytes of data.
+64 bytes from 10.0.0.2: icmp_seq=1 ttl=64 time=1.05 ms
+64 bytes from 10.0.0.2: icmp_seq=2 ttl=64 time=0.047 ms
+64 bytes from 10.0.0.2: icmp_seq=3 ttl=64 time=0.040 ms
+64 bytes from 10.0.0.2: icmp_seq=4 ttl=64 time=0.053 ms
+
+--- 10.0.0.2 ping statistics ---
+4 packets transmitted, 4 received, 0% packet loss, time 3028ms
+rtt min/avg/max/mdev = 0.040/0.298/1.053/0.435 ms
+$ ping -c 4 10.0.0.1   # từ Client
+PING 10.0.0.1 (10.0.0.1) 56(84) bytes of data.
+64 bytes from 10.0.0.1: icmp_seq=1 ttl=64 time=0.017 ms
+64 bytes from 10.0.0.1: icmp_seq=2 ttl=64 time=0.051 ms
+64 bytes from 10.0.0.1: icmp_seq=3 ttl=64 time=0.037 ms
+64 bytes from 10.0.0.1: icmp_seq=4 ttl=64 time=0.050 ms
+
+--- 10.0.0.1 ping statistics ---
+4 packets transmitted, 4 received, 0% packet loss, time 3010ms
+rtt min/avg/max/mdev = 0.017/0.038/0.051/0.013 ms
+
+=== Câu 10: phát video bằng VLC (HTTP, mux ogg) ===
+$ vlc -vvv video.ogv --sout '#standard{access=http,mux=ogg,dst=10.0.0.1:8080}'
+[00007fb0f0000e70] main stream output debug: using sout chain=`standard{access=http,mux=ogg,dst=10.0.0.1:8080}'
+[00007fb0f0001270] main stream out debug: set config option: sout-standard-access to http
+[00007fb0f0001270] main stream out debug: set config option: sout-standard-mux to ogg
+[00007fb0f0002670] main access out debug: looking for sout access module matching "http": 10 candidates
+[00007fb0f0002670] http access out warning: "10.0.0.1" HTTP host might be ignored in multiple-host configurations, use at your own risks.
+[00007fb0f0002670] http access out: Consider passing --http-host=IP on the command line instead.
+$ vlc http://10.0.0.1:8080
+   [VLC client base] Stream buffering done (2906 ms in 3214 ms) ; ảnh bị trễ=0 ; lỗi giải mã/demux=1
+[00005a95aeb90b20] cache_read stream debug: starting pre-buffering
+[00005a95aeb90b20] cache_read stream debug: pre-buffering done 296 bytes in 0s - 15213 KiB/s
+[00005a95aeb95170] main audio output debug: looking for audio output module matching "dummy": 5 candidates
+[00005a95aeb95170] main audio output debug: using audio output module "adummy"
+[00005a95aebba330] main interface debug: looking for interface module matching "dummy": 16 candidates
+[00005a95aebba330] dummy interface: using the dummy interface module...
+[00005a95aebba330] main interface debug: using interface module "dummy"
+[000076715001bde0] main decoder debug: using video decoder module "theora"
+
+=== Câu 11: delay 100ms ===
+
+$ sudo tc qdisc add dev eth0 root netem delay 100ms
+qdisc netem 8025: root refcnt 17 limit 1000 delay 100ms
+$ ping -c 6 10.0.0.2   # Server -> Client
+PING 10.0.0.2 (10.0.0.2) 56(84) bytes of data.
+64 bytes from 10.0.0.2: icmp_seq=1 ttl=64 time=100 ms
+64 bytes from 10.0.0.2: icmp_seq=2 ttl=64 time=106 ms
+64 bytes from 10.0.0.2: icmp_seq=3 ttl=64 time=108 ms
+64 bytes from 10.0.0.2: icmp_seq=4 ttl=64 time=108 ms
+64 bytes from 10.0.0.2: icmp_seq=5 ttl=64 time=108 ms
+64 bytes from 10.0.0.2: icmp_seq=6 ttl=64 time=108 ms
+
+--- 10.0.0.2 ping statistics ---
+6 packets transmitted, 6 received, 0% packet loss, time 4998ms
+rtt min/avg/max/mdev = 100.214/106.710/108.471/3.019 ms
+
+=== Câu 12: delay 100ms, client có và không có đệm ===
+   [VLC client delay100_buf] Stream buffering done (2906 ms in 3218 ms) ; ảnh bị trễ=4 ; lỗi giải mã/demux=1
+   [VLC client delay100_nobuf] Stream buffering done (160 ms in 101 ms) ; ảnh bị trễ=267 ; lỗi giải mã/demux=1
+
+=== Câu 13: biến đổi độ trễ ===
+
+$ sudo tc qdisc change dev eth0 root netem delay 100ms 10ms
+--- 10.0.0.2 ping statistics ---
+6 packets transmitted, 6 received, 0% packet loss, time 5005ms
+rtt min/avg/max/mdev = 91.612/101.826/108.365/5.877 ms
+   [VLC client delay_j10] Stream buffering done (2906 ms in 3255 ms) ; ảnh bị trễ=0 ; lỗi giải mã/demux=1
+
+$ sudo tc qdisc change dev eth0 root netem delay 100ms 10ms 25%
+--- 10.0.0.2 ping statistics ---
+6 packets transmitted, 6 received, 0% packet loss, time 4997ms
+rtt min/avg/max/mdev = 104.699/111.006/117.723/4.514 ms
+   [VLC client delay_j10_c25] Stream buffering done (2906 ms in 3277 ms) ; ảnh bị trễ=0 ; lỗi giải mã/demux=1
+
+=== Câu 14: mất gói ===
+
+$ sudo tc qdisc change dev eth0 root netem loss 0.1%
+   [VLC client loss01] Stream buffering done (2906 ms in 3247 ms) ; ảnh bị trễ=3 ; lỗi giải mã/demux=1
+
+$ sudo tc qdisc change dev eth0 root netem loss 5%
+   [VLC client loss5] Stream buffering done (2906 ms in 3235 ms) ; ảnh bị trễ=4 ; lỗi giải mã/demux=1
+
+=== Câu 15: mất gói có tương quan ===
+
+$ sudo tc qdisc change dev eth0 root netem loss 0.3% 25%
+   [VLC client loss03_c25] Stream buffering done (2906 ms in 3268 ms) ; ảnh bị trễ=2 ; lỗi giải mã/demux=1
+
+$ sudo tc qdisc change dev eth0 root netem loss 5% 25%
+   [VLC client loss5_c25] Stream buffering done (2906 ms in 3250 ms) ; ảnh bị trễ=6 ; lỗi giải mã/demux=1
+
+=== Câu 16: lặp gói ===
+
+$ sudo tc qdisc change dev eth0 root netem duplicate 1%
+   [VLC client dup1] Stream buffering done (2906 ms in 3263 ms) ; ảnh bị trễ=4 ; lỗi giải mã/demux=1
+
+$ sudo tc qdisc change dev eth0 root netem duplicate 20%
+   [VLC client dup20] Stream buffering done (2906 ms in 3236 ms) ; ảnh bị trễ=4 ; lỗi giải mã/demux=1
+
+=== Lỗi gói tin ===
+
+$ sudo tc qdisc change dev eth0 root netem corrupt 0.1%
+   [VLC client corrupt01] Stream buffering done (2906 ms in 3251 ms) ; ảnh bị trễ=5 ; lỗi giải mã/demux=1
+
+$ sudo tc qdisc change dev eth0 root netem corrupt 5%
+   [VLC client corrupt5] Stream buffering done (2906 ms in 3282 ms) ; ảnh bị trễ=4 ; lỗi giải mã/demux=1
+
+=== Câu 17: đảo thứ tự gói ===
+
+$ sudo tc qdisc change dev eth0 root netem delay 10ms reorder 100% gap 5
+   [VLC client gap5] Stream buffering done (2906 ms in 3282 ms) ; ảnh bị trễ=5 ; lỗi giải mã/demux=1
+
+$ sudo tc qdisc change dev eth0 root netem delay 10ms reorder 25% 50%
+   [VLC client reorder25] Stream buffering done (2906 ms in 3283 ms) ; ảnh bị trễ=5 ; lỗi giải mã/demux=1
+
+
+$ sudo tc qdisc del dev eth0 root
+qdisc noqueue 0: root refcnt 2 
+LABDONE

@@ -1,0 +1,20 @@
+# Tài liệu tham khảo (bản quyền, nặng)
+/*.pdf
+/Slide/
+
+# Đề bài của giảng viên
+**/btlt_*.pdf
+**/btth_*.pdf
+
+# Bản Word (đã có PDF/MD)
+*.docx
+~$*
+
+# Dependency / build
+node_modules/
+*.jar
+*.class
+__pycache__/
+
+# Bản trùng
+Chuong-1/kvss_session.pcapng

@@ -1,0 +1,2 @@
+[VLC client nobuf_nodelay, network-caching=0] Stream buffering done (160 ms in 0 ms) ; ảnh bị trễ=277
+[VLC client nobuf_delay100, network-caching=0] Stream buffering done (160 ms in 100 ms) ; ảnh bị trễ=265
